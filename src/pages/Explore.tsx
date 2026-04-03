@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, SlidersHorizontal, FileQuestion } from "lucide-react";
+import { Search, ArrowRight, SlidersHorizontal, FileQuestion, Code, FlaskConical, Globe, Swords, Sparkles, Clapperboard, Music, BookOpen, Trophy, Gamepad2, Languages, Calculator, HelpCircle, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
