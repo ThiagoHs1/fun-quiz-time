@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import QuizCard from "@/components/QuizCard";
 import { MOCK_QUIZZES } from "@/lib/constants";
 
