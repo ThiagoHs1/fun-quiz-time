@@ -136,6 +136,12 @@ export default function Create() {
           />
         )}
       </div>
+
+      <TemplateModal
+        open={showTemplates}
+        onOpenChange={setShowTemplates}
+        onSelect={handleTemplate}
+      />
     </div>
   );
 }
