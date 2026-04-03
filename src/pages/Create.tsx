@@ -32,6 +32,13 @@ export default function Create() {
   const [formData, setFormData] = useState<QuizFormData>(defaultFormData);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editMode, setEditMode] = useState<{ id: string; type: "draft" | "published" } | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleTemplate = (template: QuizTemplate) => {
+    setFormData(template.formData);
+    setQuestions(template.questions.map((q) => ({ ...q, id: crypto.randomUUID() })));
+    setStep(0);
+  };
 
   useEffect(() => {
     const editId = searchParams.get("edit");
