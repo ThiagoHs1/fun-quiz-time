@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BrainCircuit, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QuizCard from "@/components/QuizCard";
