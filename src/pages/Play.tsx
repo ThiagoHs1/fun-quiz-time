@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle, Trophy, RotateCcw, Home, Share2 } from "lucide-react";
+import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle, Trophy, RotateCcw, Home, Share2, Check, X } from "lucide-react";
 import { findQuizByShareCode, type FullQuiz } from "@/lib/mock-quizzes";
 import QuizGame from "@/components/play/QuizGame";
 import { Progress } from "@/components/ui/progress";
