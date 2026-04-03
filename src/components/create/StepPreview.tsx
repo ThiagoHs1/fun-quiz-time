@@ -1,31 +1,79 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, ArrowLeft, Share2, Save, Rocket } from "lucide-react";
+import { HelpCircle, ArrowLeft, Save, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import type { QuizFormData, Question } from "@/lib/constants";
-import { GRADIENTS, generateShareCode } from "@/lib/constants";
+import { GRADIENTS } from "@/lib/constants";
+import {
+  saveDraft, publishDraft, getCreatorName, savePublishedQuiz, getPublishedQuizzes,
+  type DraftQuiz,
+} from "@/lib/quiz-store";
 
 interface Props {
   formData: QuizFormData;
   questions: Question[];
   onBack: () => void;
+  editMode?: { id: string; type: "draft" | "published" } | null;
 }
 
-export default function StepPreview({ formData, questions, onBack }: Props) {
+export default function StepPreview({ formData, questions, onBack, editMode }: Props) {
+  const navigate = useNavigate();
   const gradient = formData.cover_gradient || GRADIENTS[0];
+  const creatorName = getCreatorName();
 
-  const saveDraft = () => {
-    const draft = { formData, questions, savedAt: new Date().toISOString() };
-    localStorage.setItem("quizcraft-draft", JSON.stringify(draft));
-    toast.success("Draft saved locally!");
+  const handleSaveDraft = () => {
+    const draft: DraftQuiz = {
+      id: editMode?.type === "draft" ? editMode.id : crypto.randomUUID(),
+      formData,
+      questions,
+      savedAt: new Date().toISOString(),
+    };
+    saveDraft(draft);
+    toast.success("Draft saved!");
+    navigate("/my-quizzes");
   };
 
-  const publish = () => {
-    const shareCode = generateShareCode();
-    toast.success(`Quiz published! Share code: ${shareCode}`, {
-      description: "Connect Lovable Cloud to save to database.",
-      duration: 6000,
-    });
+  const handlePublish = () => {
+    if (!creatorName) {
+      toast.error("Please set a creator name first in My Quizzes");
+      return;
+    }
+
+    if (editMode?.type === "published") {
+      // Update existing published quiz
+      const existing = getPublishedQuizzes().find((q) => q.id === editMode.id);
+      if (existing) {
+        const updated = {
+          ...existing,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category || "General Knowledge",
+          difficulty: formData.difficulty,
+          cover_gradient: formData.cover_gradient,
+          time_limit: formData.time_limit,
+          shuffle_questions: formData.shuffle_questions,
+          show_answers: formData.show_answers,
+          is_public: formData.is_public,
+          questions,
+        };
+        savePublishedQuiz(updated);
+        toast.success("Quiz updated!");
+        navigate("/my-quizzes");
+        return;
+      }
+    }
+
+    // New publish (from draft or fresh)
+    const draft: DraftQuiz = {
+      id: editMode?.type === "draft" ? editMode.id : crypto.randomUUID(),
+      formData,
+      questions,
+      savedAt: new Date().toISOString(),
+    };
+    const quiz = publishDraft(draft, creatorName);
+    toast.success(`Quiz published! Share code: ${quiz.share_code}`, { duration: 6000 });
+    navigate("/my-quizzes");
   };
 
   const firstQ = questions[0];
@@ -88,11 +136,11 @@ export default function StepPreview({ formData, questions, onBack }: Props) {
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={saveDraft} className="gap-2 rounded-full">
+          <Button variant="outline" onClick={handleSaveDraft} className="gap-2 rounded-full">
             <Save className="h-4 w-4" /> Save as Draft
           </Button>
-          <Button onClick={publish} className="gap-2 rounded-full px-6">
-            <Rocket className="h-4 w-4" /> Publish Quiz
+          <Button onClick={handlePublish} className="gap-2 rounded-full px-6">
+            <Rocket className="h-4 w-4" /> {editMode?.type === "published" ? "Update Quiz" : "Publish Quiz"}
           </Button>
         </div>
       </div>
