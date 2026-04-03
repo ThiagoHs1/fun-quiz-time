@@ -3,10 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import StepInfo from "@/components/create/StepInfo";
 import StepQuestions from "@/components/create/StepQuestions";
 import StepPreview from "@/components/create/StepPreview";
+import TemplateModal from "@/components/create/TemplateModal";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import type { QuizFormData, Question } from "@/lib/constants";
 import { getDrafts, getPublishedQuizzes, type DraftQuiz } from "@/lib/quiz-store";
+import type { QuizTemplate } from "@/lib/quiz-templates";
 import { Badge } from "@/components/ui/badge";
+import { LayoutTemplate } from "lucide-react";
 
 const STEPS = ["Quiz Info", "Add Questions", "Preview & Publish"];
 
@@ -28,6 +32,13 @@ export default function Create() {
   const [formData, setFormData] = useState<QuizFormData>(defaultFormData);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editMode, setEditMode] = useState<{ id: string; type: "draft" | "published" } | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleTemplate = (template: QuizTemplate) => {
+    setFormData(template.formData);
+    setQuestions(template.questions.map((q) => ({ ...q, id: crypto.randomUUID() })));
+    setStep(0);
+  };
 
   useEffect(() => {
     const editId = searchParams.get("edit");
@@ -63,6 +74,14 @@ export default function Create() {
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4 max-w-3xl">
+        {!editMode && (
+          <div className="mb-4 flex justify-end">
+            <Button variant="outline" size="sm" className="gap-2 rounded-full" onClick={() => setShowTemplates(true)}>
+              <LayoutTemplate className="h-4 w-4" /> Start from Template
+            </Button>
+          </div>
+        )}
+
         {editMode && (
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border flex items-center gap-2 text-sm">
             <Badge variant="outline" className="shrink-0">
@@ -117,6 +136,12 @@ export default function Create() {
           />
         )}
       </div>
+
+      <TemplateModal
+        open={showTemplates}
+        onOpenChange={setShowTemplates}
+        onSelect={handleTemplate}
+      />
     </div>
   );
 }

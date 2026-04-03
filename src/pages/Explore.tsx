@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ArrowRight, SlidersHorizontal, FileQuestion } from "lucide-react";
+import { Search, ArrowRight, SlidersHorizontal, FileQuestion, Code, FlaskConical, Globe, Swords, Sparkles, Clapperboard, Music, BookOpen, Trophy, Gamepad2, Languages, Calculator, HelpCircle, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,21 @@ import { findQuizByShareCode } from "@/lib/mock-quizzes";
 import { toast } from "sonner";
 
 type SortOption = "most_played" | "highest_rated" | "newest" | "most_questions";
+
+const CATEGORY_CARDS = [
+  { name: "Technology", icon: Code, iconColor: "text-blue-500", bg: "linear-gradient(135deg, hsl(210 80% 96%), hsl(210 60% 92%))" },
+  { name: "Science", icon: FlaskConical, iconColor: "text-teal-500", bg: "linear-gradient(135deg, hsl(170 60% 96%), hsl(170 40% 92%))" },
+  { name: "History", icon: BookOpen, iconColor: "text-amber-500", bg: "linear-gradient(135deg, hsl(38 80% 96%), hsl(38 60% 92%))" },
+  { name: "Geography", icon: Globe, iconColor: "text-emerald-500", bg: "linear-gradient(135deg, hsl(150 60% 96%), hsl(150 40% 92%))" },
+  { name: "Anime & Manga", icon: Sparkles, iconColor: "text-pink-500", bg: "linear-gradient(135deg, hsl(330 70% 96%), hsl(330 50% 92%))" },
+  { name: "Gaming", icon: Gamepad2, iconColor: "text-purple-500", bg: "linear-gradient(135deg, hsl(270 60% 96%), hsl(270 40% 92%))" },
+  { name: "Entertainment", icon: Tv, iconColor: "text-orange-500", bg: "linear-gradient(135deg, hsl(25 80% 96%), hsl(25 60% 92%))" },
+  { name: "Music", icon: Music, iconColor: "text-rose-500", bg: "linear-gradient(135deg, hsl(350 60% 96%), hsl(350 40% 92%))" },
+  { name: "Movies & TV", icon: Clapperboard, iconColor: "text-indigo-500", bg: "linear-gradient(135deg, hsl(240 60% 96%), hsl(240 40% 92%))" },
+  { name: "Sports", icon: Trophy, iconColor: "text-green-500", bg: "linear-gradient(135deg, hsl(140 60% 96%), hsl(140 40% 92%))" },
+  { name: "Language", icon: Languages, iconColor: "text-cyan-500", bg: "linear-gradient(135deg, hsl(190 60% 96%), hsl(190 40% 92%))" },
+  { name: "General Knowledge", icon: HelpCircle, iconColor: "text-violet-500", bg: "linear-gradient(135deg, hsl(260 60% 96%), hsl(260 40% 92%))" },
+] as const;
 
 const PAGE_SIZE = 12;
 
@@ -209,6 +224,31 @@ export default function Explore() {
             </div>
           </div>
         </div>
+
+        {/* Browse by Category */}
+        {!search && category === "All" && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Browse by Category
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {CATEGORY_CARDS.map((cat) => (
+                <button
+                  key={cat.name}
+                  onClick={() => setCategory(cat.name)}
+                  className="group rounded-xl border border-border p-4 text-left transition-all hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ background: cat.bg }}
+                >
+                  <cat.icon className={`h-7 w-7 mb-2 ${cat.iconColor}`} />
+                  <p className="font-medium text-sm">{cat.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {MOCK_QUIZZES.filter((q) => q.category === cat.name).length} quizzes
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Featured Section */}
         {!search && category === "All" && difficulty === "All" && (
