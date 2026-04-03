@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import QuizCard from "@/components/QuizCard";
 import { MOCK_QUIZZES } from "@/lib/constants";
 
 export default function Explore() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4">
@@ -11,7 +14,11 @@ export default function Explore() {
         <p className="text-muted-foreground mb-8">Discover quizzes created by the community</p>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {MOCK_QUIZZES.map((quiz) => (
-            <QuizCard key={quiz.id} {...quiz} />
+            <QuizCard
+              key={quiz.id}
+              {...quiz}
+              onClick={quiz.share_code ? () => navigate(`/play/${quiz.share_code}`) : undefined}
+            />
           ))}
         </div>
       </div>

@@ -1,10 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BrainCircuit, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QuizCard from "@/components/QuizCard";
 import { MOCK_QUIZZES } from "@/lib/constants";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen pt-16">
       {/* Hero */}
@@ -46,7 +48,11 @@ const Index = () => {
         </h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {MOCK_QUIZZES.map((quiz) => (
-            <QuizCard key={quiz.id} {...quiz} />
+            <QuizCard
+              key={quiz.id}
+              {...quiz}
+              onClick={quiz.share_code ? () => navigate(`/play/${quiz.share_code}`) : undefined}
+            />
           ))}
         </div>
       </section>
