@@ -1,19 +1,21 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  Check, X, RotateCcw, Compass, Copy, Clock, Target, Zap, Award,
-  Trophy, Medal, Lightbulb,
+  Check, X, RotateCcw, Compass, Clock, Target, Zap, Award,
+  Trophy, Medal, Lightbulb, Swords,
 } from "lucide-react";
 import { toast } from "sonner";
 import Confetti from "./Confetti";
 import StarRating from "./StarRating";
+import ShareDropdown from "@/components/ShareDropdown";
 import type { Question } from "@/lib/constants";
 import type { FullQuiz } from "@/lib/mock-quizzes";
+import { savePlayedQuiz } from "@/lib/player-stats";
 
 interface PlayerAnswer {
   question_id: string;
@@ -40,7 +42,6 @@ interface Props {
   onPlayAgain: () => void;
 }
 
-// Mock leaderboard data
 function getMockLeaderboard(quiz: FullQuiz, playerName: string, score: number, total: number, pct: number, time: number): LeaderboardEntry[] {
   const existing: LeaderboardEntry[] = [
     { player_name: "Alex", score: total, total_questions: total, percentage: 100, time_taken: total * 8, created_at: "2026-03-28T10:00:00Z" },
@@ -50,13 +51,8 @@ function getMockLeaderboard(quiz: FullQuiz, playerName: string, score: number, t
   ];
 
   const current: LeaderboardEntry = {
-    player_name: playerName,
-    score,
-    total_questions: total,
-    percentage: pct,
-    time_taken: time,
-    created_at: new Date().toISOString(),
-    is_current: true,
+    player_name: playerName, score, total_questions: total, percentage: pct,
+    time_taken: time, created_at: new Date().toISOString(), is_current: true,
   };
 
   const all = [...existing, current];
@@ -97,8 +93,8 @@ const RANK_ICONS = [
 
 export default function ResultsScreen({ quiz, playerName, answers, totalTime, onPlayAgain }: Props) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [animatedPct, setAnimatedPct] = useState(0);
-  const shareCardRef = useRef<HTMLDivElement>(null);
 
   const correctCount = answers.filter((a) => a.is_correct).length;
   const total = answers.length;
@@ -111,6 +107,24 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
   const playerRank = leaderboard.findIndex((e) => e.is_current) + 1;
   const isNewRecord = playerRank === 1;
 
+  // Challenge mode
+  const challengeName = searchParams.get("challenge");
+  const challengeScore = searchParams.get("score") ? parseInt(searchParams.get("score")!) : null;
+
+  // Save played quiz to history
+  useEffect(() => {
+    savePlayedQuiz({
+      quizId: quiz.id,
+      quizTitle: quiz.title,
+      category: quiz.category,
+      score: correctCount,
+      totalQuestions: total,
+      percentage,
+      timeTaken: totalTime,
+      playedAt: new Date().toISOString(),
+    });
+  }, []);
+
   // Animate score circle
   useEffect(() => {
     const duration = 1200;
@@ -118,7 +132,7 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
     const animate = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
       setAnimatedPct(Math.round(percentage * eased));
       if (progress < 1) requestAnimationFrame(animate);
     };
@@ -129,11 +143,10 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - animatedPct / 100);
 
-  const handleCopyLink = () => {
-    const url = `${window.location.origin}/play/${quiz.share_code}`;
-    const text = `I scored ${percentage}% on "${quiz.title}"! Can you beat me? → ${url}`;
-    navigator.clipboard.writeText(text);
-    toast.success("Link copied to clipboard!");
+  const handleChallenge = () => {
+    const challengeUrl = `${window.location.origin}/play/${quiz.share_code}?challenge=${encodeURIComponent(playerName)}&score=${percentage}`;
+    navigator.clipboard.writeText(challengeUrl);
+    toast.success("Challenge link copied! Send it to a friend.");
   };
 
   const handleRate = (rating: number) => {
@@ -145,6 +158,38 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
       {percentage === 100 && <Confetti />}
 
       <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
+        {/* Challenge comparison */}
+        {challengeName && challengeScore !== null && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 animate-scale-in">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Swords className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Challenge Result</h3>
+            </div>
+            <div className="grid grid-cols-3 items-center gap-4 text-center">
+              <div>
+                <p className="text-sm text-muted-foreground">{challengeName}</p>
+                <p className={`text-3xl font-bold ${challengeScore < percentage ? "text-muted-foreground" : "text-primary"}`}>
+                  {challengeScore}%
+                </p>
+              </div>
+              <div className="text-xl font-bold text-muted-foreground">VS</div>
+              <div>
+                <p className="text-sm text-muted-foreground">{playerName}</p>
+                <p className={`text-3xl font-bold ${percentage >= challengeScore ? "text-primary" : "text-muted-foreground"}`}>
+                  {percentage}%
+                </p>
+              </div>
+            </div>
+            <p className="text-center text-sm font-medium mt-3 text-primary">
+              {percentage > challengeScore
+                ? `🎉 ${playerName} wins!`
+                : percentage === challengeScore
+                ? "🤝 It's a tie!"
+                : `${challengeName} wins this round!`}
+            </p>
+          </div>
+        )}
+
         {/* Score Circle + Message */}
         <div className="text-center space-y-4">
           {isNewRecord && (
@@ -155,20 +200,11 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
 
           <div className="relative inline-flex items-center justify-center">
             <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-90">
+              <circle cx="90" cy="90" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="10" />
               <circle
-                cx="90" cy="90" r={radius}
-                fill="none"
-                stroke="hsl(var(--border))"
-                strokeWidth="10"
-              />
-              <circle
-                cx="90" cy="90" r={radius}
-                fill="none"
-                stroke={scoreColor}
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
+                cx="90" cy="90" r={radius} fill="none"
+                stroke={scoreColor} strokeWidth="10" strokeLinecap="round"
+                strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
                 style={{ transition: "none" }}
               />
             </svg>
@@ -177,14 +213,8 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            {correctCount} out of {total} correct
-          </p>
-
-          <h1
-            className="text-2xl font-semibold"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
+          <p className="text-sm text-muted-foreground">{correctCount} out of {total} correct</p>
+          <h1 className="text-2xl font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             {message}
           </h1>
           <p className="text-muted-foreground">{playerName}</p>
@@ -247,17 +277,12 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
                               else if (isSelected && !isCorrect) cls = "border-red-500 bg-red-500/10";
 
                               return (
-                                <div
-                                  key={oi}
-                                  className={`flex items-center gap-2 p-2.5 rounded-lg border text-sm ${cls}`}
-                                >
+                                <div key={oi} className={`flex items-center gap-2 p-2.5 rounded-lg border text-sm ${cls}`}>
                                   {isCorrect && <Check className="h-4 w-4 text-emerald-500 shrink-0" />}
                                   {isSelected && !isCorrect && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                   {!isCorrect && !isSelected && <div className="w-4 shrink-0" />}
                                   <span>{opt.text}</span>
-                                  {isSelected && (
-                                    <Badge variant="outline" className="ml-auto text-xs">Your answer</Badge>
-                                  )}
+                                  {isSelected && <Badge variant="outline" className="ml-auto text-xs">Your answer</Badge>}
                                 </div>
                               );
                             })}
@@ -293,35 +318,24 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
                   <th className="text-left py-3 font-medium">Player</th>
                   <th className="text-center py-3 font-medium">Score</th>
                   <th className="text-center py-3 font-medium">%</th>
-                  <th className="text-center py-3 font-medium">Time</th>
-                  <th className="text-right px-5 py-3 font-medium">Date</th>
+                  <th className="text-center py-3 font-medium hidden sm:table-cell">Time</th>
+                  <th className="text-right px-5 py-3 font-medium hidden sm:table-cell">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboard.map((entry, i) => (
-                  <tr
-                    key={i}
-                    className={`border-b border-border last:border-0 transition-colors ${
-                      entry.is_current ? "bg-primary/5" : ""
-                    }`}
-                  >
-                    <td className="px-5 py-3">
-                      {i < 3 ? RANK_ICONS[i] : <span className="text-muted-foreground">{i + 1}</span>}
-                    </td>
+                  <tr key={i} className={`border-b border-border last:border-0 transition-colors ${entry.is_current ? "bg-primary/5" : ""}`}>
+                    <td className="px-5 py-3">{i < 3 ? RANK_ICONS[i] : <span className="text-muted-foreground">{i + 1}</span>}</td>
                     <td className="py-3 font-medium">
                       <span className="flex items-center gap-2">
                         {entry.player_name}
-                        {entry.is_current && (
-                          <Badge variant="secondary" className="text-xs">You</Badge>
-                        )}
+                        {entry.is_current && <Badge variant="secondary" className="text-xs">You</Badge>}
                       </span>
                     </td>
                     <td className="py-3 text-center">{entry.score}/{entry.total_questions}</td>
                     <td className="py-3 text-center font-semibold">{entry.percentage}%</td>
-                    <td className="py-3 text-center text-muted-foreground">{formatTime(entry.time_taken)}</td>
-                    <td className="px-5 py-3 text-right text-muted-foreground">
-                      {new Date(entry.created_at).toLocaleDateString()}
-                    </td>
+                    <td className="py-3 text-center text-muted-foreground hidden sm:table-cell">{formatTime(entry.time_taken)}</td>
+                    <td className="px-5 py-3 text-right text-muted-foreground hidden sm:table-cell">{new Date(entry.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -334,24 +348,14 @@ export default function ResultsScreen({ quiz, playerName, answers, totalTime, on
           <StarRating quizId={quiz.id} onRate={handleRate} />
         </div>
 
-        {/* Share Card (hidden, for reference) */}
-        <div ref={shareCardRef} className="hidden">
-          <div className="w-[400px] p-6 rounded-xl text-white text-center" style={{ background: quiz.cover_gradient }}>
-            <p className="text-sm opacity-80">QuizCraft</p>
-            <h3 className="text-xl font-bold mt-2">{quiz.title}</h3>
-            <p className="text-4xl font-bold mt-4">{percentage}%</p>
-            <p className="text-sm mt-1">{correctCount}/{total} correct • #{playerRank} on leaderboard</p>
-            <p className="text-sm mt-3 opacity-80">{playerName}</p>
-          </div>
-        </div>
-
         {/* Action buttons */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Button onClick={onPlayAgain} className="gap-2 rounded-full">
             <RotateCcw className="h-4 w-4" /> Play Again
           </Button>
-          <Button variant="outline" onClick={handleCopyLink} className="gap-2 rounded-full">
-            <Copy className="h-4 w-4" /> Share Result
+          <ShareDropdown shareCode={quiz.share_code} title={quiz.title} variant="outline" size="default" />
+          <Button variant="outline" onClick={handleChallenge} className="gap-2 rounded-full">
+            <Swords className="h-4 w-4" /> Challenge a Friend
           </Button>
           <Button variant="outline" onClick={() => navigate("/explore")} className="gap-2 rounded-full">
             <Compass className="h-4 w-4" /> Explore More

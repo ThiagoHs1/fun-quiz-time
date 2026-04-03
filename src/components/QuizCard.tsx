@@ -1,6 +1,7 @@
 import { Star, Play, HelpCircle, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import ShareDropdown from "@/components/ShareDropdown";
 import type { Difficulty } from "@/lib/constants";
 import { useNavigate } from "react-router-dom";
 
@@ -56,7 +57,6 @@ export default function QuizCard({
       onClick={onClick}
       className="group cursor-pointer rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 hover:border-primary/40"
     >
-      {/* Cover */}
       <div
         className={`relative flex items-center justify-center ${featured ? "h-[200px]" : "h-[120px]"}`}
         style={{ background: cover_gradient }}
@@ -74,10 +74,7 @@ export default function QuizCard({
               {category}
             </Badge>
           </div>
-          <h3
-            className="font-medium text-base leading-tight line-clamp-2"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
+          <h3 className="font-medium text-base leading-tight line-clamp-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             {title}
           </h3>
           {description && (
@@ -98,15 +95,20 @@ export default function QuizCard({
           </span>
         </div>
 
-        {share_code && (
+        <div className="flex gap-2">
           <Button
             size="sm"
-            className="w-full rounded-full gap-1.5 text-xs"
+            className="flex-1 rounded-full gap-1.5 text-xs"
             onClick={handlePlay}
           >
             <Play className="h-3.5 w-3.5" /> Play
           </Button>
-        )}
+          {share_code && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <ShareDropdown shareCode={share_code} title={title} variant="outline" size="sm" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
