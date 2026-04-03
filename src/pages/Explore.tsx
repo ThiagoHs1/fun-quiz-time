@@ -210,6 +210,31 @@ export default function Explore() {
           </div>
         </div>
 
+        {/* Browse by Category */}
+        {!search && category === "All" && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Browse by Category
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {CATEGORY_CARDS.map((cat) => (
+                <button
+                  key={cat.name}
+                  onClick={() => setCategory(cat.name)}
+                  className="group rounded-xl border border-border p-4 text-left transition-all hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ background: cat.bg }}
+                >
+                  <cat.icon className={`h-7 w-7 mb-2 ${cat.iconColor}`} />
+                  <p className="font-medium text-sm">{cat.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {MOCK_QUIZZES.filter((q) => q.category === cat.name).length} quizzes
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Featured Section */}
         {!search && category === "All" && difficulty === "All" && (
           <div>
