@@ -3,16 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import StepInfo from "@/components/create/StepInfo";
 import StepQuestions from "@/components/create/StepQuestions";
 import StepPreview from "@/components/create/StepPreview";
-import TemplateModal from "@/components/create/TemplateModal";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import type { QuizFormData, Question } from "@/lib/constants";
 import { getDrafts, getPublishedQuizzes, type DraftQuiz } from "@/lib/quiz-store";
-import type { QuizTemplate } from "@/lib/quiz-templates";
 import { Badge } from "@/components/ui/badge";
-import { LayoutTemplate } from "lucide-react";
-
-const STEPS = ["Quiz Info", "Add Questions", "Preview & Publish"];
+import { useI18n } from "@/lib/i18n";
 
 const defaultFormData: QuizFormData = {
   title: "",
@@ -28,35 +23,24 @@ const defaultFormData: QuizFormData = {
 
 export default function Create() {
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<QuizFormData>(defaultFormData);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editMode, setEditMode] = useState<{ id: string; type: "draft" | "published" } | null>(null);
-  const [showTemplates, setShowTemplates] = useState(false);
 
-  const handleTemplate = (template: QuizTemplate) => {
-    setFormData(template.formData);
-    setQuestions(template.questions.map((q) => ({ ...q, id: crypto.randomUUID() })));
-    setStep(0);
-  };
+  const STEPS = [t("create.quizInfo"), t("create.addQuestions"), t("create.previewPublish")];
 
   useEffect(() => {
     const editId = searchParams.get("edit");
     const draftId = searchParams.get("draft");
-
     if (editId) {
       const quiz = getPublishedQuizzes().find((q) => q.id === editId);
       if (quiz) {
         setFormData({
-          title: quiz.title,
-          description: quiz.description,
-          category: quiz.category as any,
-          difficulty: quiz.difficulty,
-          cover_gradient: quiz.cover_gradient,
-          time_limit: quiz.time_limit,
-          shuffle_questions: quiz.shuffle_questions,
-          show_answers: quiz.show_answers,
-          is_public: quiz.is_public,
+          title: quiz.title, description: quiz.description, category: quiz.category as any,
+          difficulty: quiz.difficulty, cover_gradient: quiz.cover_gradient, time_limit: quiz.time_limit,
+          shuffle_questions: quiz.shuffle_questions, show_answers: quiz.show_answers, is_public: quiz.is_public,
         });
         setQuestions(quiz.questions);
         setEditMode({ id: editId, type: "published" });
@@ -74,31 +58,20 @@ export default function Create() {
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4 max-w-3xl">
-        {!editMode && (
-          <div className="mb-4 flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2 rounded-full" onClick={() => setShowTemplates(true)}>
-              <LayoutTemplate className="h-4 w-4" /> Start from Template
-            </Button>
-          </div>
-        )}
-
         {editMode && (
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border flex items-center gap-2 text-sm">
             <Badge variant="outline" className="shrink-0">
-              {editMode.type === "published" ? "Editing" : "Draft"}
+              {editMode.type === "published" ? t("create.editing") : t("create.draft")}
             </Badge>
             {editMode.type === "published" && (
-              <span className="text-muted-foreground">
-                Editing a published quiz will affect future players. Existing results will be preserved.
-              </span>
+              <span className="text-muted-foreground">{t("create.editWarning")}</span>
             )}
             {editMode.type === "draft" && (
-              <span className="text-muted-foreground">Editing draft</span>
+              <span className="text-muted-foreground">{t("create.editingDraft")}</span>
             )}
           </div>
         )}
 
-        {/* Step indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             {STEPS.map((label, i) => (
@@ -116,32 +89,10 @@ export default function Create() {
           <Progress value={((step + 1) / STEPS.length) * 100} className="h-1.5" />
         </div>
 
-        {step === 0 && (
-          <StepInfo formData={formData} setFormData={setFormData} onNext={() => setStep(1)} />
-        )}
-        {step === 1 && (
-          <StepQuestions
-            questions={questions}
-            setQuestions={setQuestions}
-            onBack={() => setStep(0)}
-            onNext={() => setStep(2)}
-          />
-        )}
-        {step === 2 && (
-          <StepPreview
-            formData={formData}
-            questions={questions}
-            onBack={() => setStep(1)}
-            editMode={editMode}
-          />
-        )}
+        {step === 0 && <StepInfo formData={formData} setFormData={setFormData} onNext={() => setStep(1)} />}
+        {step === 1 && <StepQuestions questions={questions} setQuestions={setQuestions} onBack={() => setStep(0)} onNext={() => setStep(2)} />}
+        {step === 2 && <StepPreview formData={formData} questions={questions} onBack={() => setStep(1)} editMode={editMode} />}
       </div>
-
-      <TemplateModal
-        open={showTemplates}
-        onOpenChange={setShowTemplates}
-        onSelect={handleTemplate}
-      />
     </div>
   );
 }

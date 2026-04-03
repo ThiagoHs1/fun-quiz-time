@@ -1,11 +1,12 @@
 import { Star, Play, HelpCircle, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import ShareDropdown from "@/components/ShareDropdown";
 import type { Difficulty } from "@/lib/constants";
 import { useNavigate } from "react-router-dom";
+import { useI18n, getQuizTranslationKeys } from "@/lib/i18n";
 
 interface QuizCardProps {
+  id?: string;
   title: string;
   description?: string;
   category: string;
@@ -43,9 +44,14 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function QuizCard({
-  title, description, category, difficulty, question_count, play_count, rating, cover_gradient, share_code, onClick, featured,
+  id, title, description, category, difficulty, question_count, play_count, rating, cover_gradient, share_code, onClick, featured,
 }: QuizCardProps) {
   const navigate = useNavigate();
+  const { t, tCat, tDiff } = useI18n();
+
+  const translationKeys = id ? getQuizTranslationKeys(id) : null;
+  const displayTitle = translationKeys ? t(translationKeys.title) : title;
+  const displayDesc = translationKeys && description ? t(translationKeys.desc) : description;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,7 +69,7 @@ export default function QuizCard({
       >
         <HelpCircle className="h-12 w-12 text-white/20 transition-transform group-hover:scale-110" />
         <Badge className={`absolute top-3 right-3 text-xs font-semibold border-0 ${difficultyColors[difficulty]}`}>
-          {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          {tDiff(difficulty)}
         </Badge>
       </div>
 
@@ -71,14 +77,17 @@ export default function QuizCard({
         <div>
           <div className="flex flex-wrap gap-1.5 mb-2">
             <Badge className={`text-xs border ${categoryColors[category] || categoryColors.Custom}`}>
-              {category}
+              {tCat(category)}
             </Badge>
           </div>
-          <h3 className="font-medium text-base leading-tight line-clamp-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {title}
+          <h3
+            className="font-medium text-base leading-tight line-clamp-2"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            {displayTitle}
           </h3>
-          {description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{description}</p>
+          {displayDesc && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{displayDesc}</p>
           )}
         </div>
 
@@ -95,20 +104,15 @@ export default function QuizCard({
           </span>
         </div>
 
-        <div className="flex gap-2">
+        {share_code && (
           <Button
             size="sm"
-            className="flex-1 rounded-full gap-1.5 text-xs"
+            className="w-full rounded-full gap-1.5 text-xs"
             onClick={handlePlay}
           >
-            <Play className="h-3.5 w-3.5" /> Play
+            <Play className="h-3.5 w-3.5" /> {t("card.play")}
           </Button>
-          {share_code && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <ShareDropdown shareCode={share_code} title={title} variant="outline" size="sm" />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -1,30 +1,29 @@
 import { Link, useLocation } from "react-router-dom";
-import { BrainCircuit, Sun, Moon, Menu, X, Palette } from "lucide-react";
+import { BrainCircuit, Sun, Moon, Menu, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import { useTheme, COLOR_THEMES } from "@/lib/theme";
+import { useTheme } from "@/lib/theme";
+import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
 
-const NAV_LINKS = [
-  { to: "/explore", label: "Explore" },
-  { to: "/create", label: "Create" },
-  { to: "/my-quizzes", label: "My Quizzes" },
-  { to: "/stats", label: "Stats" },
-];
-
 export default function Navbar() {
-  const { theme, colorTheme, toggleTheme, setColorTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const { lang, setLang, t } = useI18n();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const NAV_LINKS = [
+    { to: "/explore", label: t("nav.explore") },
+    { to: "/create", label: t("nav.create") },
+    { to: "/my-quizzes", label: t("nav.myQuizzes") },
+    { to: "/stats", label: t("nav.stats") },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 group">
           <BrainCircuit className="h-7 w-7 text-primary transition-transform group-hover:rotate-12" />
-          <span className="text-xl font-bold tracking-tight hidden sm:inline" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <span className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             QuizCraft
           </span>
         </Link>
@@ -45,34 +44,17 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Color theme picker */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Palette className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel className="text-xs">Color Theme</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {COLOR_THEMES.map((t) => (
-                <DropdownMenuItem
-                  key={t.value}
-                  onClick={() => setColorTheme(t.value)}
-                  className="gap-2 cursor-pointer"
-                >
-                  <div
-                    className="w-4 h-4 rounded-full border border-border shrink-0"
-                    style={{ backgroundColor: `hsl(${t.hue} 55%)` }}
-                  />
-                  <span className="flex-1">{t.label}</span>
-                  {colorTheme === t.value && (
-                    <span className="text-primary text-xs">✓</span>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Language toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLang(lang === "en" ? "pt" : "en")}
+            className="rounded-full gap-1.5 text-xs font-medium px-3"
+          >
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">{lang === "en" ? "PT" : "EN"}</span>
+            <span className="sm:hidden">{lang === "en" ? "PT" : "EN"}</span>
+          </Button>
 
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -90,7 +72,7 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl pb-4 animate-slide-down">
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl pb-4">
           {NAV_LINKS.map((link) => (
             <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}>
               <div className={`px-6 py-3 text-sm font-medium transition-colors hover:bg-muted ${

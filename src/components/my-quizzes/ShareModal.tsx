@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy, Check } from "lucide-react";
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   shareCode: string | null;
@@ -14,6 +15,7 @@ interface Props {
 
 export default function ShareModal({ shareCode, open, onOpenChange }: Props) {
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
+  const { t } = useI18n();
   if (!shareCode) return null;
 
   const url = `${window.location.origin}/play/${shareCode}`;
@@ -28,11 +30,11 @@ export default function ShareModal({ shareCode, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Share Quiz</DialogTitle>
+          <DialogTitle>{t("share.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-muted-foreground mb-1.5">Quiz Code</p>
+            <p className="text-sm text-muted-foreground mb-1.5">{t("share.code")}</p>
             <div className="flex gap-2">
               <Input readOnly value={shareCode} className="font-mono text-lg text-center tracking-widest" />
               <Button variant="outline" size="icon" onClick={() => copyText(shareCode, "code")}>
@@ -41,7 +43,7 @@ export default function ShareModal({ shareCode, open, onOpenChange }: Props) {
             </div>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground mb-1.5">Share Link</p>
+            <p className="text-sm text-muted-foreground mb-1.5">{t("share.link")}</p>
             <div className="flex gap-2">
               <Input readOnly value={url} className="text-sm" />
               <Button variant="outline" size="icon" onClick={() => copyText(url, "link")}>
