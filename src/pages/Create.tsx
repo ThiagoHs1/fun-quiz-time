@@ -3,10 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import StepInfo from "@/components/create/StepInfo";
 import StepQuestions from "@/components/create/StepQuestions";
 import StepPreview from "@/components/create/StepPreview";
+import TemplateModal from "@/components/create/TemplateModal";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import type { QuizFormData, Question } from "@/lib/constants";
 import { getDrafts, getPublishedQuizzes, type DraftQuiz } from "@/lib/quiz-store";
+import type { QuizTemplate } from "@/lib/quiz-templates";
 import { Badge } from "@/components/ui/badge";
+import { LayoutTemplate } from "lucide-react";
 
 const STEPS = ["Quiz Info", "Add Questions", "Preview & Publish"];
 
