@@ -5,6 +5,8 @@ import QuizCard from "@/components/QuizCard";
 import { MOCK_QUIZZES } from "@/lib/constants";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen pt-16">
       {/* Hero */}
