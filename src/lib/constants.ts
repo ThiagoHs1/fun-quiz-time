@@ -48,27 +48,27 @@ export const GRADIENTS = [
 export const MOCK_QUIZZES = [
   {
     id: "1", title: "JavaScript Mastery", category: "Technology", difficulty: "hard" as Difficulty,
-    question_count: 15, play_count: 1243, rating: 4.7, cover_gradient: GRADIENTS[0],
+    question_count: 15, play_count: 1243, rating: 4.7, cover_gradient: GRADIENTS[0], share_code: "JS2024",
   },
   {
     id: "2", title: "Solar System Explorer", category: "Science", difficulty: "medium" as Difficulty,
-    question_count: 10, play_count: 892, rating: 4.5, cover_gradient: GRADIENTS[1],
+    question_count: 10, play_count: 892, rating: 4.5, cover_gradient: GRADIENTS[1], share_code: "SOLAR1",
   },
   {
     id: "3", title: "World War II Facts", category: "History", difficulty: "hard" as Difficulty,
-    question_count: 20, play_count: 567, rating: 4.3, cover_gradient: GRADIENTS[2],
+    question_count: 20, play_count: 567, rating: 4.3, cover_gradient: GRADIENTS[2], share_code: "",
   },
   {
     id: "4", title: "Anime Characters Quiz", category: "Anime & Manga", difficulty: "easy" as Difficulty,
-    question_count: 12, play_count: 2100, rating: 4.8, cover_gradient: GRADIENTS[3],
+    question_count: 12, play_count: 2100, rating: 4.8, cover_gradient: GRADIENTS[3], share_code: "",
   },
   {
     id: "5", title: "90s Music Hits", category: "Music", difficulty: "medium" as Difficulty,
-    question_count: 8, play_count: 430, rating: 4.1, cover_gradient: GRADIENTS[4],
+    question_count: 8, play_count: 430, rating: 4.1, cover_gradient: GRADIENTS[4], share_code: "",
   },
   {
     id: "6", title: "Country Capitals", category: "Geography", difficulty: "easy" as Difficulty,
-    question_count: 25, play_count: 3400, rating: 4.6, cover_gradient: GRADIENTS[5],
+    question_count: 25, play_count: 3400, rating: 4.6, cover_gradient: GRADIENTS[5], share_code: "",
   },
 ];
 
