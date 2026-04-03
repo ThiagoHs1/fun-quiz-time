@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle } from "lucide-react";
+import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle, Swords } from "lucide-react";
 import { findQuizByShareCode, type FullQuiz } from "@/lib/mock-quizzes";
 import QuizGame from "@/components/play/QuizGame";
 import ResultsScreen from "@/components/play/ResultsScreen";
@@ -25,6 +25,7 @@ const diffBadgeClass: Record<string, string> = {
 
 export default function PlayPage() {
   const { shareCode } = useParams<{ shareCode: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [quiz, setQuiz] = useState<FullQuiz | null | undefined>(undefined);
   const [screen, setScreen] = useState<Screen>("entry");
@@ -32,6 +33,9 @@ export default function PlayPage() {
     localStorage.getItem("quizcraft-player-name") || ""
   );
   const [results, setResults] = useState<{ answers: PlayerAnswer[]; totalTime: number } | null>(null);
+
+  const challengeName = searchParams.get("challenge");
+  const challengeScore = searchParams.get("score");
 
   useEffect(() => {
     const found = findQuizByShareCode(shareCode ?? "");
@@ -67,12 +71,8 @@ export default function PlayPage() {
     );
   }
 
-  const avgScore =
-    quiz.rating_count > 0
-      ? Math.round((quiz.rating_sum / quiz.rating_count / 5) * 100)
-      : 0;
+  const avgScore = quiz.rating_count > 0 ? Math.round((quiz.rating_sum / quiz.rating_count / 5) * 100) : 0;
 
-  // Entry screen
   if (screen === "entry") {
     const handleStart = () => {
       if (!playerName.trim()) return;
@@ -84,14 +84,24 @@ export default function PlayPage() {
       <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4">
         <div className="w-full max-w-md animate-scale-in">
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xl shadow-primary/5">
-            <div
-              className="h-40 flex items-center justify-center relative"
-              style={{ background: quiz.cover_gradient }}
-            >
+            <div className="h-40 flex items-center justify-center relative" style={{ background: quiz.cover_gradient }}>
               <HelpCircle className="h-16 w-16 text-white/20" />
             </div>
 
             <div className="p-6 space-y-5">
+              {/* Challenge banner */}
+              {challengeName && challengeScore && (
+                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center animate-scale-in">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Swords className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-primary">Challenge!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>{challengeName}</strong> scored <strong>{challengeScore}%</strong>! Can you beat them?
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{quiz.category}</Badge>
                 <Badge className={`${diffBadgeClass[quiz.difficulty]} border-0`}>
@@ -108,10 +118,7 @@ export default function PlayPage() {
               </div>
 
               <div>
-                <h1
-                  className="text-xl font-semibold leading-tight"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
+                <h1 className="text-xl font-semibold leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {quiz.title}
                 </h1>
                 {quiz.description && (
@@ -156,7 +163,6 @@ export default function PlayPage() {
     );
   }
 
-  // Playing screen
   if (screen === "playing") {
     const orderedQuestions = quiz.shuffle_questions
       ? [...quiz.questions].sort(() => Math.random() - 0.5)
@@ -175,7 +181,6 @@ export default function PlayPage() {
     );
   }
 
-  // Results screen
   if (screen === "results" && results) {
     return (
       <ResultsScreen

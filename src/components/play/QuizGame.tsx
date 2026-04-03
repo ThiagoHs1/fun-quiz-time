@@ -37,6 +37,9 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
   const [answers, setAnswers] = useState<PlayerAnswer[]>([]);
   const [timeLeft, setTimeLeft] = useState(timeLimit ?? 0);
   const [animState, setAnimState] = useState<"in" | "out">("in");
+  const [shakeIdx, setShakeIdx] = useState<number | null>(null);
+  const [pulseIdx, setPulseIdx] = useState<number | null>(null);
+  const [checkScaleIdx, setCheckScaleIdx] = useState<number | null>(null);
   const questionStartRef = useRef(Date.now());
   const totalStartRef = useRef(Date.now());
 
@@ -49,18 +52,52 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
     if (timeLimit) setTimeLeft(timeLimit);
     questionStartRef.current = Date.now();
     setAnimState("in");
+    setShakeIdx(null);
+    setPulseIdx(null);
+    setCheckScaleIdx(null);
   }, [currentIdx, timeLimit]);
 
   // Timer countdown
   useEffect(() => {
     if (!timeLimit || answered) return;
     if (timeLeft <= 0) {
-      handleSelect(-1); // time ran out
+      handleSelect(-1);
       return;
     }
     const t = setTimeout(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearTimeout(t);
   }, [timeLeft, timeLimit, answered]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (answered && showAnswers) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goNext();
+          return;
+        }
+      }
+      if (answered) return;
+
+      if (question.question_type === "true_false") {
+        if (e.key.toLowerCase() === "t" || e.key === "1") handleSelect(0);
+        else if (e.key.toLowerCase() === "f" || e.key === "2") handleSelect(1);
+        return;
+      }
+
+      const keyMap: Record<string, number> = {
+        "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5,
+        "a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5,
+      };
+      const idx = keyMap[e.key.toLowerCase()];
+      if (idx !== undefined && idx < question.options.length) {
+        handleSelect(idx);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [answered, question, showAnswers, currentIdx]);
 
   const handleSelect = useCallback(
     (optIdx: number) => {
@@ -70,6 +107,17 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
 
       setSelectedOption(optIdx);
       setAnswered(true);
+      setPulseIdx(optIdx);
+
+      // Animations
+      if (showAnswers) {
+        if (isCorrect) {
+          setCheckScaleIdx(optIdx);
+        } else {
+          setShakeIdx(optIdx);
+          setTimeout(() => setCheckScaleIdx(correctIdx), 200);
+        }
+      }
 
       const answer: PlayerAnswer = {
         question_id: question.id,
@@ -80,11 +128,10 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
       setAnswers((prev) => [...prev, answer]);
 
       if (!showAnswers) {
-        // Auto-advance after 500ms
         setTimeout(() => goNext([...answers, answer]), 500);
       }
     },
-    [answered, question, showAnswers, answers],
+    [answered, question, showAnswers, answers, correctIdx],
   );
 
   const goNext = useCallback(
@@ -107,17 +154,20 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
 
   const getOptionStyle = (idx: number) => {
     const color = OPTION_COLORS[idx] ?? OPTION_COLORS[0];
+    const animations: string[] = [];
+    if (pulseIdx === idx) animations.push("animate-option-pulse");
+    if (shakeIdx === idx) animations.push("animate-shake");
+
     if (!answered) {
       return `border-border hover:${color.border} hover:${color.bg} hover:shadow-md hover:-translate-y-0.5 cursor-pointer`;
     }
     if (showAnswers) {
-      if (idx === correctIdx) return "border-emerald-500 bg-emerald-500/10";
+      if (idx === correctIdx) return `border-emerald-500 bg-emerald-500/10 ${animations.join(" ")}`;
       if (idx === selectedOption && !question.options[idx].is_correct)
-        return "border-red-500 bg-red-500/10";
+        return `border-red-500 bg-red-500/10 ${animations.join(" ")}`;
       return "border-border opacity-50";
     }
-    // No show answers
-    if (idx === selectedOption) return "border-primary bg-primary/10";
+    if (idx === selectedOption) return `border-primary bg-primary/10 ${animations.join(" ")}`;
     return "border-border opacity-50";
   };
 
@@ -128,7 +178,7 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
         <div className="flex items-center gap-3 mb-6">
           <Progress
             value={((currentIdx + (answered ? 1 : 0)) / questions.length) * 100}
-            className="flex-1 h-2"
+            className="flex-1 h-2 [&>div]:transition-all [&>div]:duration-300"
           />
           <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
             {currentIdx + (answered ? 1 : 0)}/{questions.length}
@@ -170,8 +220,9 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
                       <X className="h-5 w-5" />
                     )}
                     {opt.text}
+                    <span className="text-xs text-muted-foreground ml-1">({opt.text === "True" ? "T" : "F"})</span>
                     {answered && showAnswers && i === correctIdx && (
-                      <Check className="h-5 w-5 text-emerald-500" />
+                      <Check className={`h-5 w-5 text-emerald-500 ${checkScaleIdx === i ? "animate-check-scale" : ""}`} />
                     )}
                     {answered && showAnswers && i === selectedOption && !opt.is_correct && (
                       <X className="h-5 w-5 text-red-500" />
@@ -195,14 +246,15 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
                       className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 ${color.circle}`}
                     >
                       {answered && showAnswers && i === correctIdx ? (
-                        <Check className="h-4 w-4" />
+                        <Check className={`h-4 w-4 ${checkScaleIdx === i ? "animate-check-scale" : ""}`} />
                       ) : answered && showAnswers && i === selectedOption && !opt.is_correct ? (
                         <X className="h-4 w-4" />
                       ) : (
                         LABELS[i]
                       )}
                     </span>
-                    <span className="font-medium">{opt.text}</span>
+                    <span className="font-medium flex-1">{opt.text}</span>
+                    <span className="text-xs text-muted-foreground">({LABELS[i]})</span>
                   </button>
                 );
               })}
@@ -221,7 +273,7 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
             </div>
           )}
 
-          {/* Next button (only when showAnswers is on) */}
+          {/* Next button */}
           {answered && showAnswers && (
             <div className="mt-6 flex justify-end animate-fade-in">
               <Button onClick={() => goNext()} className="gap-2 rounded-full px-6" size="lg">
@@ -235,6 +287,7 @@ export default function QuizGame({ questions, timeLimit, showAnswers, onFinish }
                   </>
                 )}
               </Button>
+              <span className="text-xs text-muted-foreground self-center ml-3 hidden sm:inline">Enter ↵</span>
             </div>
           )}
         </div>
