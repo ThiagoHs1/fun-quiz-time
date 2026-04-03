@@ -10,6 +10,7 @@ import Explore from "./pages/Explore";
 import Create from "./pages/Create";
 import MyQuizzes from "./pages/MyQuizzes";
 import Stats from "./pages/Stats";
+import Play from "./pages/Play";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
