@@ -74,6 +74,14 @@ export default function Create() {
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4 max-w-3xl">
+        {!editMode && (
+          <div className="mb-4 flex justify-end">
+            <Button variant="outline" size="sm" className="gap-2 rounded-full" onClick={() => setShowTemplates(true)}>
+              <LayoutTemplate className="h-4 w-4" /> Start from Template
+            </Button>
+          </div>
+        )}
+
         {editMode && (
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border flex items-center gap-2 text-sm">
             <Badge variant="outline" className="shrink-0">
