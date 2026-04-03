@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle, Trophy, RotateCcw, Home, Share2, Check, X } from "lucide-react";
+import { HelpCircle, Play, Clock, BarChart3, ArrowRight, AlertCircle } from "lucide-react";
 import { findQuizByShareCode, type FullQuiz } from "@/lib/mock-quizzes";
 import QuizGame from "@/components/play/QuizGame";
-import { Progress } from "@/components/ui/progress";
+import ResultsScreen from "@/components/play/ResultsScreen";
 
 type Screen = "entry" | "playing" | "results";
 
@@ -34,12 +34,10 @@ export default function PlayPage() {
   const [results, setResults] = useState<{ answers: PlayerAnswer[]; totalTime: number } | null>(null);
 
   useEffect(() => {
-    // simulate async lookup
     const found = findQuizByShareCode(shareCode ?? "");
     setQuiz(found);
   }, [shareCode]);
 
-  // Loading
   if (quiz === undefined) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center">
@@ -48,7 +46,6 @@ export default function PlayPage() {
     );
   }
 
-  // Not found
   if (quiz === null) {
     return (
       <div className="min-h-screen pt-24 flex items-center justify-center px-4">
@@ -87,7 +84,6 @@ export default function PlayPage() {
       <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4">
         <div className="w-full max-w-md animate-scale-in">
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xl shadow-primary/5">
-            {/* Cover */}
             <div
               className="h-40 flex items-center justify-center relative"
               style={{ background: quiz.cover_gradient }}
@@ -96,7 +92,6 @@ export default function PlayPage() {
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Badges */}
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{quiz.category}</Badge>
                 <Badge className={`${diffBadgeClass[quiz.difficulty]} border-0`}>
@@ -124,7 +119,6 @@ export default function PlayPage() {
                 )}
               </div>
 
-              {/* Stats */}
               <div className="flex gap-6 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Play className="h-4 w-4" /> Played {quiz.play_count.toLocaleString()} times
@@ -136,7 +130,6 @@ export default function PlayPage() {
                 )}
               </div>
 
-              {/* Name input */}
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Your name</label>
                 <Input
@@ -184,122 +177,17 @@ export default function PlayPage() {
 
   // Results screen
   if (screen === "results" && results) {
-    const correctCount = results.answers.filter((a) => a.is_correct).length;
-    const total = results.answers.length;
-    const percentage = Math.round((correctCount / total) * 100);
-
-    const emoji =
-      percentage >= 90 ? "🏆" : percentage >= 70 ? "🎉" : percentage >= 50 ? "👍" : "💪";
-
-    const message =
-      percentage >= 90
-        ? "Outstanding!"
-        : percentage >= 70
-        ? "Great job!"
-        : percentage >= 50
-        ? "Not bad!"
-        : "Keep practicing!";
-
     return (
-      <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center animate-scale-in">
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-xl shadow-primary/5 space-y-6">
-            <div className="text-6xl">{emoji}</div>
-            <div>
-              <h1
-                className="text-2xl font-semibold"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {message}
-              </h1>
-              <p className="text-muted-foreground mt-1">{playerName}</p>
-            </div>
-
-            {/* Score circle */}
-            <div className="relative inline-flex items-center justify-center">
-              <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90">
-                <circle cx="70" cy="70" r="58" fill="none" stroke="hsl(var(--border))" strokeWidth="8" />
-                <circle
-                  cx="70" cy="70" r="58" fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 58}
-                  strokeDashoffset={2 * Math.PI * 58 * (1 - percentage / 100)}
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute text-center">
-                <span className="text-3xl font-bold">{percentage}%</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-8 text-sm">
-              <div>
-                <p className="text-2xl font-bold text-[hsl(var(--quiz-easy))]">{correctCount}</p>
-                <p className="text-muted-foreground">Correct</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[hsl(var(--quiz-hard))]">{total - correctCount}</p>
-                <p className="text-muted-foreground">Wrong</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{results.totalTime}s</p>
-                <p className="text-muted-foreground">Time</p>
-              </div>
-            </div>
-
-            {/* Answer breakdown */}
-            <div className="space-y-2 text-left">
-              <p className="text-sm font-medium mb-2">Question breakdown</p>
-              {results.answers.map((a, i) => {
-                const q = quiz.questions.find((qq) => qq.id === a.question_id);
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 p-2.5 rounded-lg text-sm border ${
-                      a.is_correct ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"
-                    }`}
-                  >
-                    {a.is_correct ? (
-                      <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                        <Check className="h-3.5 w-3.5 text-white" />
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shrink-0">
-                        <X className="h-3.5 w-3.5 text-white" />
-                      </div>
-                    )}
-                    <span className="line-clamp-1 flex-1">
-                      {q?.question_text ?? `Question ${i + 1}`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{a.time_spent}s</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col gap-2 pt-2">
-              <Button
-                className="w-full gap-2 rounded-full"
-                onClick={() => {
-                  setResults(null);
-                  setScreen("entry");
-                }}
-              >
-                <RotateCcw className="h-4 w-4" /> Play Again
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full gap-2 rounded-full"
-                onClick={() => navigate("/")}
-              >
-                <Home className="h-4 w-4" /> Back to Home
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ResultsScreen
+        quiz={quiz}
+        playerName={playerName}
+        answers={results.answers}
+        totalTime={results.totalTime}
+        onPlayAgain={() => {
+          setResults(null);
+          setScreen("entry");
+        }}
+      />
     );
   }
 
