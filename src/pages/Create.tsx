@@ -7,8 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import type { QuizFormData, Question } from "@/lib/constants";
 import { getDrafts, getPublishedQuizzes, type DraftQuiz } from "@/lib/quiz-store";
 import { Badge } from "@/components/ui/badge";
-
-const STEPS = ["Quiz Info", "Add Questions", "Preview & Publish"];
+import { useI18n } from "@/lib/i18n";
 
 const defaultFormData: QuizFormData = {
   title: "",
@@ -24,28 +23,24 @@ const defaultFormData: QuizFormData = {
 
 export default function Create() {
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<QuizFormData>(defaultFormData);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editMode, setEditMode] = useState<{ id: string; type: "draft" | "published" } | null>(null);
 
+  const STEPS = [t("create.quizInfo"), t("create.addQuestions"), t("create.previewPublish")];
+
   useEffect(() => {
     const editId = searchParams.get("edit");
     const draftId = searchParams.get("draft");
-
     if (editId) {
       const quiz = getPublishedQuizzes().find((q) => q.id === editId);
       if (quiz) {
         setFormData({
-          title: quiz.title,
-          description: quiz.description,
-          category: quiz.category as any,
-          difficulty: quiz.difficulty,
-          cover_gradient: quiz.cover_gradient,
-          time_limit: quiz.time_limit,
-          shuffle_questions: quiz.shuffle_questions,
-          show_answers: quiz.show_answers,
-          is_public: quiz.is_public,
+          title: quiz.title, description: quiz.description, category: quiz.category as any,
+          difficulty: quiz.difficulty, cover_gradient: quiz.cover_gradient, time_limit: quiz.time_limit,
+          shuffle_questions: quiz.shuffle_questions, show_answers: quiz.show_answers, is_public: quiz.is_public,
         });
         setQuestions(quiz.questions);
         setEditMode({ id: editId, type: "published" });
@@ -66,20 +61,17 @@ export default function Create() {
         {editMode && (
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border flex items-center gap-2 text-sm">
             <Badge variant="outline" className="shrink-0">
-              {editMode.type === "published" ? "Editing" : "Draft"}
+              {editMode.type === "published" ? t("create.editing") : t("create.draft")}
             </Badge>
             {editMode.type === "published" && (
-              <span className="text-muted-foreground">
-                Editing a published quiz will affect future players. Existing results will be preserved.
-              </span>
+              <span className="text-muted-foreground">{t("create.editWarning")}</span>
             )}
             {editMode.type === "draft" && (
-              <span className="text-muted-foreground">Editing draft</span>
+              <span className="text-muted-foreground">{t("create.editingDraft")}</span>
             )}
           </div>
         )}
 
-        {/* Step indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             {STEPS.map((label, i) => (
@@ -97,25 +89,9 @@ export default function Create() {
           <Progress value={((step + 1) / STEPS.length) * 100} className="h-1.5" />
         </div>
 
-        {step === 0 && (
-          <StepInfo formData={formData} setFormData={setFormData} onNext={() => setStep(1)} />
-        )}
-        {step === 1 && (
-          <StepQuestions
-            questions={questions}
-            setQuestions={setQuestions}
-            onBack={() => setStep(0)}
-            onNext={() => setStep(2)}
-          />
-        )}
-        {step === 2 && (
-          <StepPreview
-            formData={formData}
-            questions={questions}
-            onBack={() => setStep(1)}
-            editMode={editMode}
-          />
-        )}
+        {step === 0 && <StepInfo formData={formData} setFormData={setFormData} onNext={() => setStep(1)} />}
+        {step === 1 && <StepQuestions questions={questions} setQuestions={setQuestions} onBack={() => setStep(0)} onNext={() => setStep(2)} />}
+        {step === 2 && <StepPreview formData={formData} questions={questions} onBack={() => setStep(1)} editMode={editMode} />}
       </div>
     </div>
   );

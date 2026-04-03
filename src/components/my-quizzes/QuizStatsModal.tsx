@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import type { FullQuiz } from "@/lib/mock-quizzes";
 import { getResultsForQuiz, type MockResult } from "@/lib/quiz-store";
 import { Users, Target, Star, Trophy } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   quiz: FullQuiz | null;
@@ -14,27 +15,18 @@ interface Props {
 }
 
 export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
+  const { t } = useI18n();
   if (!quiz) return null;
 
   const results = getResultsForQuiz(quiz.id);
   const totalPlays = results.length || quiz.play_count;
-  const avgScore = results.length
-    ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / results.length)
-    : 0;
-  const avgRating = quiz.rating_count > 0
-    ? (quiz.rating_sum / quiz.rating_count).toFixed(1)
-    : "N/A";
-  const bestResult = results.length
-    ? results.reduce((best, r) => (r.percentage > best.percentage ? r : best), results[0])
-    : null;
+  const avgScore = results.length ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / results.length) : 0;
+  const avgRating = quiz.rating_count > 0 ? (quiz.rating_sum / quiz.rating_count).toFixed(1) : "N/A";
+  const bestResult = results.length ? results.reduce((best, r) => (r.percentage > best.percentage ? r : best), results[0]) : null;
 
-  // Score distribution
   const distBuckets = [
-    { range: "0-20%", count: 0 },
-    { range: "21-40%", count: 0 },
-    { range: "41-60%", count: 0 },
-    { range: "61-80%", count: 0 },
-    { range: "81-100%", count: 0 },
+    { range: "0-20%", count: 0 }, { range: "21-40%", count: 0 }, { range: "41-60%", count: 0 },
+    { range: "61-80%", count: 0 }, { range: "81-100%", count: 0 },
   ];
   results.forEach((r) => {
     if (r.percentage <= 20) distBuckets[0].count++;
@@ -44,40 +36,31 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
     else distBuckets[4].count++;
   });
 
-  // Hardest questions
   const questionErrors: { text: string; errorRate: number }[] = [];
   if (quiz.questions.length > 0 && results.length > 0) {
     quiz.questions.forEach((q) => {
-      const answersForQ = results.flatMap((r) =>
-        r.answers.filter((a) => a.question_id === q.id)
-      );
+      const answersForQ = results.flatMap((r) => r.answers.filter((a) => a.question_id === q.id));
       const total = answersForQ.length;
       const wrong = answersForQ.filter((a) => !a.correct).length;
-      if (total > 0) {
-        questionErrors.push({
-          text: q.question_text.length > 40 ? q.question_text.slice(0, 40) + "…" : q.question_text,
-          errorRate: Math.round((wrong / total) * 100),
-        });
-      }
+      if (total > 0) questionErrors.push({ text: q.question_text.length > 40 ? q.question_text.slice(0, 40) + "…" : q.question_text, errorRate: Math.round((wrong / total) * 100) });
     });
     questionErrors.sort((a, b) => b.errorRate - a.errorRate);
   }
 
   const overviewCards = [
-    { label: "Total Plays", value: totalPlays.toString(), icon: Users },
-    { label: "Avg Score", value: results.length ? `${avgScore}%` : "—", icon: Target },
-    { label: "Avg Rating", value: avgRating, icon: Star },
-    { label: "Best Score", value: bestResult ? `${bestResult.percentage}%` : "—", sub: bestResult?.player_name, icon: Trophy },
+    { label: t("statsModal.totalPlays"), value: totalPlays.toString(), icon: Users },
+    { label: t("statsModal.avgScore"), value: results.length ? `${avgScore}%` : "—", icon: Target },
+    { label: t("statsModal.avgRating"), value: avgRating, icon: Star },
+    { label: t("statsModal.bestScore"), value: bestResult ? `${bestResult.percentage}%` : "—", sub: bestResult?.player_name, icon: Trophy },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">{quiz.title} — Statistics</DialogTitle>
+          <DialogTitle className="text-xl">{quiz.title} — {t("statsModal.statistics")}</DialogTitle>
         </DialogHeader>
 
-        {/* Overview cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {overviewCards.map((c) => (
             <Card key={c.label} className="bg-muted/50">
@@ -91,10 +74,9 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
           ))}
         </div>
 
-        {/* Score distribution chart */}
         {results.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold mb-3">Score Distribution</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("statsModal.scoreDist")}</h3>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={distBuckets}>
@@ -109,10 +91,9 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Hardest questions */}
         {questionErrors.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold mb-3">Hardest Questions</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("statsModal.hardest")}</h3>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={questionErrors.slice(0, 5)} layout="vertical">
@@ -127,19 +108,18 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Recent players */}
         {results.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold mb-3">Recent Players</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("statsModal.recentPlayers")}</h3>
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="text-left p-2 font-medium">Player</th>
-                    <th className="text-center p-2 font-medium">Score</th>
+                    <th className="text-left p-2 font-medium">{t("statsModal.player")}</th>
+                    <th className="text-center p-2 font-medium">{t("statsModal.score")}</th>
                     <th className="text-center p-2 font-medium">%</th>
-                    <th className="text-center p-2 font-medium hidden sm:table-cell">Time</th>
-                    <th className="text-right p-2 font-medium hidden sm:table-cell">Date</th>
+                    <th className="text-center p-2 font-medium hidden sm:table-cell">{t("statsModal.time")}</th>
+                    <th className="text-right p-2 font-medium hidden sm:table-cell">{t("statsModal.date")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,9 +129,7 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
                       <td className="p-2 text-center">{r.score}/{r.total_questions}</td>
                       <td className="p-2 text-center font-medium">{r.percentage}%</td>
                       <td className="p-2 text-center hidden sm:table-cell">{r.time_taken}s</td>
-                      <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">
-                        {new Date(r.played_at).toLocaleDateString()}
-                      </td>
+                      <td className="p-2 text-right text-muted-foreground hidden sm:table-cell">{new Date(r.played_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -162,7 +140,7 @@ export default function QuizStatsModal({ quiz, open, onOpenChange }: Props) {
 
         {results.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No one has played this quiz yet. Share it to get results!</p>
+            <p>{t("statsModal.noPlays")}</p>
           </div>
         )}
       </DialogContent>
